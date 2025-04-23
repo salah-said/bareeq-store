@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>Bareeq Store</title>
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
@@ -11,9 +13,11 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      overscroll-behavior: none; /* Prevent pull-to-refresh issues on mobile */
     }
     .product-card {
       transition: transform 0.2s;
+      touch-action: manipulation; /* Improve touch responsiveness */
     }
     .product-card:hover {
       transform: scale(1.05);
@@ -35,25 +39,38 @@
     .sidebar::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
+    img {
+      max-width: 100%;
+      height: auto; /* Optimize images for mobile */
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     const categories = [
       "Men Watches", "Perfumes", "Sunglasses", "Women Watches",
       "Women Bags", "Men Wallets", "Women Wallets", "Women Accessories"
     ];
 
+    const imagePool = [
+      "images/product1.jpg",
+      "images/product2.jpg",
+      "images/product3.jpg",
+      "images/product4.jpg",
+      "images/product5.jpg",
+      "images/product6.jpg",
+    ];
+
     const initialProducts = [
-      { id: 1, name: "Men's Classic Watch", category: "Men Watches", price: 25.00, description: "Elegant stainless steel watch with leather strap.", image: "images/product1.jpg" },
-      { id: 2, name: "Floral Perfume", category: "Perfumes", price: 30.00, description: "Long-lasting fragrance with floral notes.", image: "images/product2.jpg" },
-      { id: 3, name: "Aviator Sunglasses", category: "Sunglasses", price: 20.00, description: "Stylish UV-protected sunglasses.", image: "images/product3.jpg" },
-      { id: 4, name: "Women's Smart Watch", category: "Women Watches", price: 50.00, description: "Fitness tracker with sleek design.", image: "images/product4.jpg" },
-      { id: 5, name: "Leather Women Bag", category: "Women Bags", price: 45.00, description: "Spacious and stylish leather bag.", image: "images/product5.jpg" },
-      { id: 6, name: "Men's Leather Wallet", category: "Men Wallets", price: 15.00, description: "Durable wallet with multiple compartments.", image: "images/product6.jpg" },
+      { id: 1, name: "Men's Classic Watch", category: "Men Watches", price: 25.00, description: "Elegant stainless steel watch with leather strap.", image: imagePool[0] },
+      { id: 2, name: "Floral Perfume", category: "Perfumes", price: 30.00, description: "Long-lasting fragrance with floral notes.", image: imagePool[1] },
+      { id: 3, name: "Aviator Sunglasses", category: "Sunglasses", price: 20.00, description: "Stylish UV-protected sunglasses.", image: imagePool[2] },
+      { id: 4, name: "Women's Smart Watch", category: "Women Watches", price: 50.00, description: "Fitness tracker with sleek design.", image: imagePool[3] },
+      { id: 5, name: "Leather Women Bag", category: "Women Bags", price: 45.00, description: "Spacious and stylish leather bag.", image: imagePool[4] },
+      { id: 6, name: "Men's Leather Wallet", category: "Men Wallets", price: 15.00, description: "Durable wallet with multiple compartments.", image: imagePool[5] },
     ];
 
     function App() {
@@ -67,6 +84,9 @@
       const [searchQuery, setSearchQuery] = useState("");
       const [editingPrice, setEditingPrice] = useState(null);
       const [newPrice, setNewPrice] = useState("");
+      const [page, setPage] = useState(1);
+      const [isLoading, setIsLoading] = useState(false);
+      const loaderRef = useRef(null);
 
       useEffect(() => {
         try {
@@ -78,6 +98,44 @@
           console.error("Error accessing localStorage:", error);
         }
       }, []);
+
+      useEffect(() => {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting && !isLoading) {
+              loadMoreProducts();
+            }
+          },
+          { threshold: 1.0 }
+        );
+
+        if (loaderRef.current) {
+          observer.observe(loaderRef.current);
+        }
+
+        return () => {
+          if (loaderRef.current) {
+            observer.unobserve(loaderRef.current);
+          }
+        };
+      }, [isLoading]);
+
+      const loadMoreProducts = () => {
+        setIsLoading(true);
+        setTimeout(() => {
+          const newProducts = Array.from({ length: 5 }, (_, index) => ({
+            id: products.length + index + 1,
+            name: `Product ${products.length + index + 1}`,
+            category: categories[Math.floor(Math.random() * categories.length)],
+            price: Math.floor(Math.random() * 50) + 10,
+            description: `Description for product ${products.length + index + 1}`,
+            image: imagePool[(products.length + index) % imagePool.length], // Cycle through valid images
+          }));
+          setProducts([...products, ...newProducts]);
+          setPage(page + 1);
+          setIsLoading(false);
+        }, 1000);
+      };
 
       const toggleDarkMode = () => {
         setIsDarkMode(!isDarkMode);
@@ -133,7 +191,8 @@
         const inPriceRange = product.price >= priceRangeMin && product.price <= priceRangeMax;
         const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                              product.description.toLowerCase().includes(searchQuery.toLowerCase());
-        return inCategory && inPriceRange && matchesSearch;
+        const hasValidImage = product.image && imagePool.includes(product.image); // Ensure valid image
+        return inCategory && inPriceRange && matchesSearch && hasValidImage;
       });
 
       const handleLogin = () => {
@@ -242,37 +301,35 @@
                       <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"} mb-1`}>{product.category}</p>
                       <h3 className="font-semibold text-sm">{product.name}</h3>
                       <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>{product.description}</p>
-                      <div className="flex items-center space-x-2">
-                        {editingPrice === product.id ? (
-                          <>
-                            <input
-                              type="number"
-                              value={newPrice}
-                              onChange={(e) => setNewPrice(e.target.value)}
-                              className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
-                              placeholder="New Price"
-                            />
-                            <button
-                              onClick={() => handleSavePrice(product.id)}
-                              className="bg-green-500 text-white px-2 py-1 rounded"
-                            >
-                              Save
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
-                            <button
-                              onClick={() => handleEditPrice(product.id, product.price)}
-                              className="text-sm text-blue-500 hover:underline"
-                            >
-                              Edit Price
-                            </button>
-                          </>
-                        )}
-                      </div>
+                      {editingPrice === product.id ? (
+                        <div className="flex items-center space-x-2 mt-2">
+                          <input
+                            type="number"
+                            value={newPrice}
+                            onChange={(e) => setNewPrice(e.target.value)}
+                            className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
+                            placeholder="New Price"
+                          />
+                          <button
+                            onClick={() => handleSavePrice(product.id)}
+                            className="bg-green-500 text-white px-2 py-1 rounded"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleEditPrice(product.id, product.price)}
+                          className="text-sm text-blue-500 hover:underline mt-2"
+                        >
+                          Edit Price
+                        </button>
+                      )}
                     </div>
                   ))}
+                </div>
+                <div ref={loaderRef} className="text-center py-4">
+                  {isLoading && <p>Loading more products...</p>}
                 </div>
               </section>
 
@@ -280,6 +337,7 @@
               <section className="mb-8">
                 <h2 className="text-xl font-bold mb-4">Shipping & Payment</h2>
                 <p>Shipped to all governorates in 2-3 days.</p>
+                <p>Shipping Cost: $5.00 (Flat rate for all orders)</p>
                 <p>Order via WhatsApp: <a href="https://wa.me/201010945324" className="text-blue-500">01010945324</a></p>
               </section>
 
