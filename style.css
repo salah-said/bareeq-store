@@ -1,0 +1,47 @@
+body {
+  font-family: Arial, sans-serif;
+  color: black; /* الوضع الافتراضي: اللون الأسود */
+  background-color: white; /* الوضع الافتراضي: الخلفية بيضاء */
+}
+
+/* عند التبديل إلى الوضع الليلي */
+body.dark {
+  color: white; /* تغيير اللون إلى أبيض في الوضع الليلي */
+  background-color: #2d2d2d; /* تغيير الخلفية إلى سوداء في الوضع الليلي */
+}
+
+.product-card {
+  transition: transform 0.2s;
+}
+
+.product-card:hover {
+  transform: scale(1.05);
+}
+
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* تغير الألوان في الوضع الليلي */
+body.dark .sidebar {
+  scrollbar-color: #555 #333; /* ألوان الشريط الجانبي في الوضع الليلي */
+}
+

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bareeq Store</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .product-card {
+      transition: transform 0.2s;
+    }
+    .product-card:hover {
+      transform: scale(1.05);
+    }
+    .sidebar {
+      scrollbar-width: thin;
+      scrollbar-color: #888 #f1f1f1;
+    }
+    .sidebar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .sidebar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const categories = [
+      "Men Watches", "Perfumes", "Sunglasses", "Women Watches",
+      "Women Bags", "Men Wallets", "Women Wallets", "Women Accessories"
+    ];
+
+    const initialProducts = [
+      { id: 1, name: "Men's Classic Watch", category: "Men Watches", price: 25.00, description: "Elegant stainless steel watch with leather strap.", image: "images/product1.jpg" },
+      { id: 2, name: "Floral Perfume", category: "Perfumes", price: 30.00, description: "Long-lasting fragrance with floral notes.", image: "images/product2.jpg" },
+      { id: 3, name: "Aviator Sunglasses", category: "Sunglasses", price: 20.00, description: "Stylish UV-protected sunglasses.", image: "images/product3.jpg" },
+      { id: 4, name: "Women's Smart Watch", category: "Women Watches", price: 50.00, description: "Fitness tracker with sleek design.", image: "images/product4.jpg" },
+      { id: 5, name: "Leather Women Bag", category: "Women Bags", price: 45.00, description: "Spacious and stylish leather bag.", image: "images/product5.jpg" },
+      { id: 6, name: "Men's Leather Wallet", category: "Men Wallets", price: 15.00, description: "Durable wallet with multiple compartments.", image: "images/product6.jpg" },
+    ];
+
+    function App() {
+      const [isDarkMode, setIsDarkMode] = useState(false);
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+      const [selectedCategory, setSelectedCategory] = useState("All");
+      const [priceRangeMin, setPriceRangeMin] = useState(0);
+      const [priceRangeMax, setPriceRangeMax] = useState(100);
+      const [products, setProducts] = useState(initialProducts);
+      const [user, setUser] = useState(null);
+      const [searchQuery, setSearchQuery] = useState("");
+      const [editingPrice, setEditingPrice] = useState(null);
+      const [newPrice, setNewPrice] = useState("");
+
+      useEffect(() => {
+        try {
+          const loggedInUser = localStorage.getItem("user");
+          if (loggedInUser) {
+            setUser(JSON.parse(loggedInUser));
+          }
+        } catch (error) {
+          console.error("Error accessing localStorage:", error);
+        }
+      }, []);
+
+      const toggleDarkMode = () => {
+        setIsDarkMode(!isDarkMode);
+        document.documentElement.classList.toggle("dark");
+      };
+
+      const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+      };
+
+      const handleCategorySelect = (category) => {
+        setSelectedCategory(category);
+        setIsSidebarOpen(false);
+      };
+
+      const handlePriceMinChange = (e) => {
+        const value = e.target.value ? Number(e.target.value) : 0;
+        if (value <= priceRangeMax) {
+          setPriceRangeMin(value);
+        }
+      };
+
+      const handlePriceMaxChange = (e) => {
+        const value = e.target.value ? Number(e.target.value) : 100;
+        if (value >= priceRangeMin) {
+          setPriceRangeMax(value);
+        }
+      };
+
+      const handleSearch = (e) => {
+        setSearchQuery(e.target.value);
+      };
+
+      const handleEditPrice = (productId, currentPrice) => {
+        setEditingPrice(productId);
+        setNewPrice(currentPrice.toString());
+      };
+
+      const handleSavePrice = (productId) => {
+        const priceValue = parseFloat(newPrice);
+        if (!isNaN(priceValue) && priceValue >= 0) {
+          const updatedProducts = products.map(product =>
+            product.id === productId ? { ...product, price: priceValue } : product
+          );
+          setProducts(updatedProducts);
+        }
+        setEditingPrice(null);
+        setNewPrice("");
+      };
+
+      const filteredProducts = products.filter(product => {
+        const inCategory = selectedCategory === "All" || product.category === selectedCategory;
+        const inPriceRange = product.price >= priceRangeMin && product.price <= priceRangeMax;
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             product.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return inCategory && inPriceRange && matchesSearch;
+      });
+
+      const handleLogin = () => {
+        try {
+          const userData = { name: "John Doe" };
+          localStorage.setItem("user", JSON.stringify(userData));
+          setUser(userData);
+        } catch (error) {
+          console.error("Error setting localStorage:", error);
+        }
+      };
+
+      const handleLogout = () => {
+        try {
+          localStorage.removeItem("user");
+          setUser(null);
+        } catch (error) {
+          console.error("Error removing from localStorage:", error);
+        }
+      };
+
+      return (
+        <div className={`min-h-screen ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}>
+          {/* Header */}
+          <header className={`shadow-md p-4 flex items-center justify-between ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+            <div className="flex items-center space-x-4">
+              <button onClick={toggleSidebar} className="text-2xl md:hidden">☰</button>
+              <img src="images/logo.png" alt="Bareeq Logo" className="h-12" />
+              <div className="flex-grow mx-4">
+                <input
+                  type="text"
+                  placeholder="Search Bareeq Store..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  className={`w-full p-2 rounded-full border focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-600 bg-gray-700 text-white" : "border-gray-300 bg-white text-black"}`}
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <span>Hello, {user.name}</span>
+                  <button onClick={handleLogout} className="text-sm bg-red-500 text-white px-2 py-1 rounded">Logout</button>
+                </div>
+              ) : (
+                <button onClick={handleLogin} className="text-sm bg-yellow-500 text-black px-3 py-1 rounded">Sign In</button>
+              )}
+              <button onClick={toggleDarkMode} className="text-xl">
+                {isDarkMode ? "☀️" : "🌙"}
+              </button>
+              <span className="text-2xl cursor-pointer">🛒</span>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <div className="flex">
+            {/* Sidebar */}
+            <aside className={`w-64 p-4 h-screen overflow-y-auto sidebar shadow-md ${isDarkMode ? "bg-gray-800" : "bg-white"} ${isSidebarOpen ? "block" : "hidden"} md:block`}>
+              <h2 className="text-lg font-bold mb-4">Departments</h2>
+              <button
+                onClick={() => handleCategorySelect("All")}
+                className={`block w-full text-left py-1 px-2 hover:bg-gray-100 ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+              >
+                All Departments
+              </button>
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => handleCategorySelect(category)}
+                  className={`block w-full text-left py-1 px-2 hover:bg-gray-100 ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                >
+                  {category}
+                </button>
+              ))}
+              <div className="mt-6">
+                <h3 className="font-semibold">Price Range</h3>
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    value={priceRangeMin}
+                    onChange={handlePriceMinChange}
+                    className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
+                    placeholder="Min"
+                  />
+                  <input
+                    type="number"
+                    value={priceRangeMax}
+                    onChange={handlePriceMaxChange}
+                    className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
+                    placeholder="Max"
+                  />
+                </div>
+                <p className="mt-2">${priceRangeMin} - ${priceRangeMax}</p>
+              </div>
+            </aside>
+
+            {/* Main Section */}
+            <main className="flex-1 p-4">
+              {/* Products */}
+              <section className="mb-8">
+                <h2 className="text-xl font-bold mb-4">Results</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {filteredProducts.map(product => (
+                    <div key={product.id} className={`p-4 rounded shadow product-card ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                      <img src={product.image} alt={product.name} className="w-full h-40 object-contain mb-2" />
+                      <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"} mb-1`}>{product.category}</p>
+                      <h3 className="font-semibold text-sm">{product.name}</h3>
+                      <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>{product.description}</p>
+                      <div className="flex items-center space-x-2">
+                        {editingPrice === product.id ? (
+                          <>
+                            <input
+                              type="number"
+                              value={newPrice}
+                              onChange={(e) => setNewPrice(e.target.value)}
+                              className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
+                              placeholder="New Price"
+                            />
+                            <button
+                              onClick={() => handleSavePrice(product.id)}
+                              className="bg-green-500 text-white px-2 py-1 rounded"
+                            >
+                              Save
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
+                            <button
+                              onClick={() => handleEditPrice(product.id, product.price)}
+                              className="text-sm text-blue-500 hover:underline"
+                            >
+                              Edit Price
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Shipping & Payment */}
+              <section className="mb-8">
+                <h2 className="text-xl font-bold mb-4">Shipping & Payment</h2>
+                <p>Shipped to all governorates in 2-3 days.</p>
+                <p>Order via WhatsApp: <a href="https://wa.me/201010945324" className="text-blue-500">01010945324</a></p>
+              </section>
+
+              {/* About */}
+              <section className="mb-8">
+                <h2 className="text-xl font-bold mb-4">About Bareeq</h2>
+                <p>Bareeq is all about elegance and simplicity. We bring high-quality products with style that fits your life.</p>
+              </section>
+
+              {/* Contact */}
+              <section className="mb-8">
+                <h2 className="text-xl font-bold mb-4">Contact Us</h2>
+                <div className={`p-6 rounded-lg shadow ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}>
+                  <input
+                    type="text"
+                    placeholder="Your Name"
+                    required
+                    className={`w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-500 bg-gray-600 text-white placeholder-gray-300" : "border-gray-400 bg-white text-black placeholder-gray-400"}`}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Your Email"
+                    required
+                    className={`w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-500 bg-gray-600 text-white placeholder-gray-300" : "border-gray-400 bg-white text-black placeholder-gray-400"}`}
+                  />
+                  <textarea
+                    placeholder="Your Message"
+                    className={`w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-500 bg-gray-600 text-white placeholder-gray-300" : "border-gray-400 bg-white text-black placeholder-gray-400"}`}
+                    rows="4"
+                  ></textarea>
+                  <button
+                    onClick={() => alert("Message sent!")}
+                    className="bg-yellow-500 text-black px-6 py-2 rounded hover:bg-yellow-600 transition"
+                  >
+                    Send
+                  </button>
+                </div>
+                <div className="flex space-x-4 mt-4">
+                  <a href="https://www.facebook.com/share/18MS1CwxtP/" className="text-blue-500 hover:underline">Facebook</a>
+                  <a href="https://www.instagram.com/_bareeq_store_?igsh=ZHQzeHJpbm96aThj" className="text-blue-500 hover:underline">Instagram</a>
+                  <a href="https://tiktok.com/@bareeq_st0re" className="text-blue-500 hover:underline">TikTok</a>
+                  <a href="https://wa.me/201010945324" className="text-blue-500 hover:underline">WhatsApp</a>
+                </div>
+              </section>
+            </main>
+          </div>
+
+          {/* Footer */}
+          <footer className={`p-4 text-center ${isDarkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-black"}`}>
+            <div className="flex justify-center space-x-4">
+              <span className="cursor-pointer">🏠 Home</span>
+              <span className="cursor-pointer">🔍 Search</span>
+              <span className="cursor-pointer">📁 Collection</span>
+              <span className="cursor-pointer">🛒 Cart</span>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    try {
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    } catch (error) {
+      console.error("Error rendering the app:", error);
+    }
+  </script>
+</body>
+</html>
