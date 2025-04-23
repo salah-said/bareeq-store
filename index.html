@@ -43,50 +43,53 @@
       max-width: 100%;
       height: auto; /* Optimize images for mobile */
     }
+    .error-message {
+      color: red;
+      text-align: center;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
 
     const categories = [
       "Men Watches", "Perfumes", "Sunglasses", "Women Watches",
       "Women Bags", "Men Wallets", "Women Wallets", "Women Accessories"
     ];
 
+    // مصفوفة الصور تحتوي على بالضبط 30 صورة
     const imagePool = [
-      "images/product1.jpg",
-      "images/product2.jpg",
-      "images/product3.jpg",
-      "images/product4.jpg",
-      "images/product5.jpg",
-      "images/product6.jpg",
+      "images/product1.jpg", "images/product2.jpg", "images/product3.jpg", "images/product4.jpg", "images/product5.jpg",
+      "images/product6.jpg", "images/product7.jpg", "images/product8.jpg", "images/product9.jpg", "images/product10.jpg",
+      "images/product11.jpg", "images/product12.jpg", "images/product13.jpg", "images/product14.jpg", "images/product15.jpg",
+      "images/product16.jpg", "images/product17.jpg", "images/product18.jpg", "images/product19.jpg", "images/product20.jpg",
+      "images/product21.jpg", "images/product22.jpg", "images/product23.jpg", "images/product24.jpg", "images/product25.jpg",
+      "images/product26.jpg", "images/product27.jpg", "images/product28.jpg", "images/product29.jpg", "images/product30.jpg"
     ];
 
-    const initialProducts = [
-      { id: 1, name: "Men's Classic Watch", category: "Men Watches", price: 25.00, description: "Elegant stainless steel watch with leather strap.", image: imagePool[0] },
-      { id: 2, name: "Floral Perfume", category: "Perfumes", price: 30.00, description: "Long-lasting fragrance with floral notes.", image: imagePool[1] },
-      { id: 3, name: "Aviator Sunglasses", category: "Sunglasses", price: 20.00, description: "Stylish UV-protected sunglasses.", image: imagePool[2] },
-      { id: 4, name: "Women's Smart Watch", category: "Women Watches", price: 50.00, description: "Fitness tracker with sleek design.", image: imagePool[3] },
-      { id: 5, name: "Leather Women Bag", category: "Women Bags", price: 45.00, description: "Spacious and stylish leather bag.", image: imagePool[4] },
-      { id: 6, name: "Men's Leather Wallet", category: "Men Wallets", price: 15.00, description: "Durable wallet with multiple compartments.", image: imagePool[5] },
-    ];
+    // مصفوفة المنتجات تحتوي على بالضبط 30 منتجًا
+    const initialProducts = Array.from({ length: 30 }, (_, index) => ({
+      id: index + 1,
+      name: `Product ${index + 1}`,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      price: Math.floor(Math.random() * 50) + 10,
+      description: `Description for product ${index + 1}`,
+      image: imagePool[index] // كل منتج له صورة فريدة من imagePool
+    }));
 
     function App() {
       const [isDarkMode, setIsDarkMode] = useState(false);
       const [isSidebarOpen, setIsSidebarOpen] = useState(false);
       const [selectedCategory, setSelectedCategory] = useState("All");
-      const [priceRangeMin, setPriceRangeMin] = useState(0);
-      const [priceRangeMax, setPriceRangeMax] = useState(100);
       const [products, setProducts] = useState(initialProducts);
       const [user, setUser] = useState(null);
       const [searchQuery, setSearchQuery] = useState("");
       const [editingPrice, setEditingPrice] = useState(null);
       const [newPrice, setNewPrice] = useState("");
-      const [page, setPage] = useState(1);
-      const [isLoading, setIsLoading] = useState(false);
-      const loaderRef = useRef(null);
+      const [error, setError] = useState(null);
 
       useEffect(() => {
         try {
@@ -96,46 +99,9 @@
           }
         } catch (error) {
           console.error("Error accessing localStorage:", error);
+          setError("Failed to load user data. Please try again.");
         }
       }, []);
-
-      useEffect(() => {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            if (entries[0].isIntersecting && !isLoading) {
-              loadMoreProducts();
-            }
-          },
-          { threshold: 1.0 }
-        );
-
-        if (loaderRef.current) {
-          observer.observe(loaderRef.current);
-        }
-
-        return () => {
-          if (loaderRef.current) {
-            observer.unobserve(loaderRef.current);
-          }
-        };
-      }, [isLoading]);
-
-      const loadMoreProducts = () => {
-        setIsLoading(true);
-        setTimeout(() => {
-          const newProducts = Array.from({ length: 5 }, (_, index) => ({
-            id: products.length + index + 1,
-            name: `Product ${products.length + index + 1}`,
-            category: categories[Math.floor(Math.random() * categories.length)],
-            price: Math.floor(Math.random() * 50) + 10,
-            description: `Description for product ${products.length + index + 1}`,
-            image: imagePool[(products.length + index) % imagePool.length], // Cycle through valid images
-          }));
-          setProducts([...products, ...newProducts]);
-          setPage(page + 1);
-          setIsLoading(false);
-        }, 1000);
-      };
 
       const toggleDarkMode = () => {
         setIsDarkMode(!isDarkMode);
@@ -151,20 +117,6 @@
         setIsSidebarOpen(false);
       };
 
-      const handlePriceMinChange = (e) => {
-        const value = e.target.value ? Number(e.target.value) : 0;
-        if (value <= priceRangeMax) {
-          setPriceRangeMin(value);
-        }
-      };
-
-      const handlePriceMaxChange = (e) => {
-        const value = e.target.value ? Number(e.target.value) : 100;
-        if (value >= priceRangeMin) {
-          setPriceRangeMax(value);
-        }
-      };
-
       const handleSearch = (e) => {
         setSearchQuery(e.target.value);
       };
@@ -175,24 +127,34 @@
       };
 
       const handleSavePrice = (productId) => {
-        const priceValue = parseFloat(newPrice);
-        if (!isNaN(priceValue) && priceValue >= 0) {
-          const updatedProducts = products.map(product =>
-            product.id === productId ? { ...product, price: priceValue } : product
-          );
-          setProducts(updatedProducts);
+        try {
+          const priceValue = parseFloat(newPrice);
+          if (!isNaN(priceValue) && priceValue >= 0) {
+            const updatedProducts = products.map(product =>
+              product.id === productId ? { ...product, price: priceValue } : product
+            );
+            setProducts(updatedProducts);
+          }
+          setEditingPrice(null);
+          setNewPrice("");
+        } catch (error) {
+          console.error("Error saving price:", error);
+          setError("Failed to save price. Please try again.");
         }
-        setEditingPrice(null);
-        setNewPrice("");
       };
 
       const filteredProducts = products.filter(product => {
-        const inCategory = selectedCategory === "All" || product.category === selectedCategory;
-        const inPriceRange = product.price >= priceRangeMin && product.price <= priceRangeMax;
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             product.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const hasValidImage = product.image && imagePool.includes(product.image); // Ensure valid image
-        return inCategory && inPriceRange && matchesSearch && hasValidImage;
+        try {
+          const inCategory = selectedCategory === "All" || product.category === selectedCategory;
+          const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                               product.description.toLowerCase().includes(searchQuery.toLowerCase());
+          const hasValidImage = product.image && imagePool.includes(product.image);
+          return inCategory && matchesSearch && hasValidImage;
+        } catch (error) {
+          console.error("Error filtering products:", error);
+          setError("Failed to filter products. Please try again.");
+          return false;
+        }
       });
 
       const handleLogin = () => {
@@ -202,6 +164,7 @@
           setUser(userData);
         } catch (error) {
           console.error("Error setting localStorage:", error);
+          setError("Failed to log in. Please try again.");
         }
       };
 
@@ -211,8 +174,13 @@
           setUser(null);
         } catch (error) {
           console.error("Error removing from localStorage:", error);
+          setError("Failed to log out. Please try again.");
         }
       };
+
+      if (error) {
+        return <div className="error-message">{error}</div>;
+      }
 
       return (
         <div className={`min-h-screen ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}>
@@ -220,7 +188,7 @@
           <header className={`shadow-md p-4 flex items-center justify-between ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
             <div className="flex items-center space-x-4">
               <button onClick={toggleSidebar} className="text-2xl md:hidden">☰</button>
-              <img src="images/logo.png" alt="Bareeq Logo" className="h-12" />
+              <img src="images/logo.png" alt="Bareeq Logo" className="h-12" onError={() => console.error("Failed to load logo")} />
               <div className="flex-grow mx-4">
                 <input
                   type="text"
@@ -267,26 +235,6 @@
                   {category}
                 </button>
               ))}
-              <div className="mt-6">
-                <h3 className="font-semibold">Price Range</h3>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    value={priceRangeMin}
-                    onChange={handlePriceMinChange}
-                    className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
-                    placeholder="Min"
-                  />
-                  <input
-                    type="number"
-                    value={priceRangeMax}
-                    onChange={handlePriceMaxChange}
-                    className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
-                    placeholder="Max"
-                  />
-                </div>
-                <p className="mt-2">${priceRangeMin} - ${priceRangeMax}</p>
-              </div>
             </aside>
 
             {/* Main Section */}
@@ -297,7 +245,12 @@
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   {filteredProducts.map(product => (
                     <div key={product.id} className={`p-4 rounded shadow product-card ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-                      <img src={product.image} alt={product.name} className="w-full h-40 object-contain mb-2" />
+                      <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        className="w-full h-40 object-contain mb-2" 
+                        onError={() => console.error(`Failed to load image: ${product.image}`)} 
+                      />
                       <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"} mb-1`}>{product.category}</p>
                       <h3 className="font-semibold text-sm">{product.name}</h3>
                       <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>{product.description}</p>
@@ -327,9 +280,6 @@
                       )}
                     </div>
                   ))}
-                </div>
-                <div ref={loaderRef} className="text-center py-4">
-                  {isLoading && <p>Loading more products...</p>}
                 </div>
               </section>
 
@@ -403,6 +353,7 @@
       root.render(<App />);
     } catch (error) {
       console.error("Error rendering the app:", error);
+      document.getElementById("root").innerHTML = `<div class="error-message">Failed to load the application: ${error.message}</div>`;
     }
   </script>
 </body>
