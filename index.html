@@ -12,349 +12,558 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      overscroll-behavior: none; /* Prevent pull-to-refresh issues on mobile */
+      font-family: 'Amazon Ember', Arial, sans-serif;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .product-card {
-      transition: transform 0.2s;
-      touch-action: manipulation; /* Improve touch responsiveness */
+      transition: all 0.2s ease;
+      touch-action: manipulation;
     }
     .product-card:hover {
-      transform: scale(1.05);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
-    .sidebar {
-      scrollbar-width: thin;
-      scrollbar-color: #888 #f1f1f1;
+    .amazon-navbar {
+      background: linear-gradient(to bottom, #1E3A8A, #3B82F6);
     }
-    .sidebar::-webkit-scrollbar {
-      width: 8px;
+    .amazon-search {
+      background: linear-gradient(to bottom, #FBBF24, #F59E0B);
     }
-    .sidebar::-webkit-scrollbar-track {
-      background: #f1f1f1;
+    .amazon-search:focus {
+      box-shadow: 0 0 0 3px #F59E0B, 0 0 0 2px #F59E0B inset;
     }
-    .sidebar::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 4px;
+    .amazon-orange-btn {
+      background: linear-gradient(to bottom, #FBBF24, #F59E0B);
+      border-color: #D97706 #B4530B #92400E;
     }
-    .sidebar::-webkit-scrollbar-thumb:hover {
-      background: #555;
+    .amazon-orange-btn:hover {
+      background: linear-gradient(to bottom, #FCD34D, #FBBF24);
     }
-    img {
-      max-width: 100%;
-      height: auto; /* Optimize images for mobile */
+    .amazon-dark-btn {
+      background: linear-gradient(to bottom, #F3F4F6, #E5E7EB);
+      border-color: #9CA3AF #6B7280 #4B5563;
     }
-    .error-message {
-      color: red;
-      text-align: center;
-      padding: 20px;
+    .amazon-dark-btn:hover {
+      background: linear-gradient(to bottom, #E5E7EB, #D1D5DB);
+    }
+    .amazon-footer {
+      background: linear-gradient(to bottom, #1E3A8A, #3B82F6);
+    }
+    .hamburger-menu {
+      width: 25px;
+      height: 20px;
+      position: relative;
+      transform: rotate(0deg);
+      transition: .5s ease-in-out;
+      cursor: pointer;
+    }
+    .hamburger-menu span {
+      display: block;
+      position: absolute;
+      height: 3px;
+      width: 100%;
+      background: white;
+      border-radius: 3px;
+      opacity: 1;
+      left: 0;
+      transform: rotate(0deg);
+      transition: .25s ease-in-out;
+    }
+    .hamburger-menu span:nth-child(1) { top: 0px; }
+    .hamburger-menu span:nth-child(2), .hamburger-menu span:nth-child(3) { top: 8px; }
+    .hamburger-menu span:nth-child(4) { top: 16px; }
+    .hamburger-menu.open span:nth-child(1) {
+      top: 8px;
+      width: 0%;
+      left: 50%;
+    }
+    .hamburger-menu.open span:nth-child(2) { transform: rotate(45deg); }
+    .hamburger-menu.open span:nth-child(3) { transform: rotate(-45deg); }
+    .hamburger-menu.open span:nth-child(4) {
+      top: 8px;
+      width: 0%;
+      left: 50%;
+    }
+    .carousel {
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+    .carousel-item {
+      scroll-snap-align: start;
+      flex: 0 0 auto;
+    }
+    .rating-stars {
+      color: #F59E0B;
+      font-size: 18px;
+    }
+    .prime-badge {
+      background: #3B82F6;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .dropdown-menu {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      min-width: 200px;
+    }
+    .social-link:hover svg {
+      fill: #F59E0B;
+    }
+    @media (max-width: 640px) {
+      .mobile-hidden { display: none; }
+      .mobile-flex-col { flex-direction: column; }
+      .mobile-text-sm { font-size: 14px; }
+      .mobile-p-2 { padding: 8px; }
     }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     const categories = [
       "Men Watches", "Perfumes", "Sunglasses", "Women Watches",
       "Women Bags", "Men Wallets", "Women Wallets", "Women Accessories"
     ];
 
-    // مصفوفة الصور تحتوي على بالضبط 30 صورة
+    const categoryImages = {
+      "Men Watches": "images/product1.jpg",
+      "Perfumes": "images/product2.jpg",
+      "Sunglasses": "images/product3.jpg",
+      "Women Watches": "images/product4.jpg",
+      "Women Bags": "images/product5.jpg",
+      "Men Wallets": "images/product6.jpg",
+      "Women Wallets": "images/product7.jpg",
+      "Women Accessories": "images/product8.jpg"
+    };
+
     const imagePool = [
-      "images/product1.jpg", "images/product2.jpg", "images/product3.jpg", "images/product4.jpg", "images/product5.jpg",
-      "images/product6.jpg", "images/product7.jpg", "images/product8.jpg", "images/product9.jpg", "images/product10.jpg",
-      "images/product11.jpg", "images/product12.jpg", "images/product13.jpg", "images/product14.jpg", "images/product15.jpg",
-      "images/product16.jpg", "images/product17.jpg", "images/product18.jpg", "images/product19.jpg", "images/product20.jpg",
-      "images/product21.jpg", "images/product22.jpg", "images/product23.jpg", "images/product24.jpg", "images/product25.jpg",
-      "images/product26.jpg", "images/product27.jpg", "images/product28.jpg", "images/product29.jpg", "images/product30.jpg"
+      "images/product1.jpg",
+      "images/product2.jpg",
+      "images/product3.jpg",
+      "images/product4.jpg",
+      "images/product5.jpg",
+      "images/product6.jpg",
+      "images/product7.jpg",
+      "images/product8.jpg",
+      "images/product1.jpg",
+      "images/product2.jpg",
+      "images/product3.jpg",
+      "images/product4.jpg",
+      "images/product5.jpg",
+      "images/product6.jpg",
+      "images/product7.jpg",
+      "images/product8.jpg",
+      "images/product1.jpg",
+      "images/product2.jpg",
+      "images/product3.jpg",
+      "images/product4.jpg",
+      "images/product5.jpg",
+      "images/product6.jpg",
+      "images/product7.jpg",
+      "images/product8.jpg",
+      "images/product1.jpg",
+      "images/product2.jpg",
+      "images/product3.jpg",
+      "images/product4.jpg",
+      "images/product5.jpg",
+      "images/product8.jpg"
     ];
 
-    // مصفوفة المنتجات تحتوي على بالضبط 30 منتجًا
     const initialProducts = Array.from({ length: 30 }, (_, index) => ({
       id: index + 1,
-      name: `Product ${index + 1}`,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      price: Math.floor(Math.random() * 50) + 10,
-      description: `Description for product ${index + 1}`,
-      image: imagePool[index] // كل منتج له صورة فريدة من imagePool
+      name: `Premium ${categories[index % categories.length].replace(/s$/, '')} ${index + 1}`,
+      category: categories[index % categories.length],
+      description: `High-quality ${categories[index % categories.length].toLowerCase()} with premium features.`,
+      image: imagePool[index],
+      rating: (Math.random() * 2 + 3).toFixed(1),
+      reviews: Math.floor(Math.random() * 100),
+      isPrime: Math.random() > 0.3
     }));
 
+    const carouselItems = [
+      { id: 1, title: "Summer Sale", subtitle: "Explore our latest offers", image: "images/product1.jpg" },
+      { id: 2, title: "New Arrivals", subtitle: "Discover latest trends", image: "images/product2.jpg" },
+      { id: 3, title: "Prime Members", subtitle: "Exclusive deals", image: "images/product3.jpg" }
+    ];
+
     function App() {
-      const [isDarkMode, setIsDarkMode] = useState(false);
       const [isSidebarOpen, setIsSidebarOpen] = useState(false);
       const [selectedCategory, setSelectedCategory] = useState("All");
       const [products, setProducts] = useState(initialProducts);
-      const [user, setUser] = useState(null);
       const [searchQuery, setSearchQuery] = useState("");
-      const [editingPrice, setEditingPrice] = useState(null);
-      const [newPrice, setNewPrice] = useState("");
-      const [error, setError] = useState(null);
+      const [cartItems, setCartItems] = useState(0);
+      const [isCartMenuOpen, setIsCartMenuOpen] = useState(false);
+      const [activeCarouselItem, setActiveCarouselItem] = useState(0);
+      const carouselRef = useRef(null);
 
       useEffect(() => {
-        try {
-          const loggedInUser = localStorage.getItem("user");
-          if (loggedInUser) {
-            setUser(JSON.parse(loggedInUser));
+        const interval = setInterval(() => {
+          setActiveCarouselItem((prev) => (prev + 1) % carouselItems.length);
+          if (carouselRef.current) {
+            carouselRef.current.scrollTo({
+              left: carouselRef.current.clientWidth * ((activeCarouselItem + 1) % carouselItems.length),
+              behavior: 'smooth'
+            });
           }
-        } catch (error) {
-          console.error("Error accessing localStorage:", error);
-          setError("Failed to load user data. Please try again.");
-        }
-      }, []);
+        }, 5000);
+        return () => clearInterval(interval);
+      }, [activeCarouselItem]);
 
-      const toggleDarkMode = () => {
-        setIsDarkMode(!isDarkMode);
-        document.documentElement.classList.toggle("dark");
-      };
-
-      const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-      };
-
+      const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
       const handleCategorySelect = (category) => {
         setSelectedCategory(category);
         setIsSidebarOpen(false);
       };
-
-      const handleSearch = (e) => {
-        setSearchQuery(e.target.value);
-      };
-
-      const handleEditPrice = (productId, currentPrice) => {
-        setEditingPrice(productId);
-        setNewPrice(currentPrice.toString());
-      };
-
-      const handleSavePrice = (productId) => {
-        try {
-          const priceValue = parseFloat(newPrice);
-          if (!isNaN(priceValue) && priceValue >= 0) {
-            const updatedProducts = products.map(product =>
-              product.id === productId ? { ...product, price: priceValue } : product
-            );
-            setProducts(updatedProducts);
-          }
-          setEditingPrice(null);
-          setNewPrice("");
-        } catch (error) {
-          console.error("Error saving price:", error);
-          setError("Failed to save price. Please try again.");
-        }
+      const handleSearch = (e) => setSearchQuery(e.target.value);
+      const addToCart = (productId) => {
+        setCartItems(cartItems + 1);
+        setIsCartMenuOpen(true);
+        setTimeout(() => setIsCartMenuOpen(false), 3000);
       };
 
       const filteredProducts = products.filter(product => {
-        try {
-          const inCategory = selectedCategory === "All" || product.category === selectedCategory;
-          const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                               product.description.toLowerCase().includes(searchQuery.toLowerCase());
-          const hasValidImage = product.image && imagePool.includes(product.image);
-          return inCategory && matchesSearch && hasValidImage;
-        } catch (error) {
-          console.error("Error filtering products:", error);
-          setError("Failed to filter products. Please try again.");
-          return false;
-        }
+        const inCategory = selectedCategory === "All" || product.category === selectedCategory;
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           product.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return inCategory && matchesSearch;
       });
 
-      const handleLogin = () => {
-        try {
-          const userData = { name: "John Doe" };
-          localStorage.setItem("user", JSON.stringify(userData));
-          setUser(userData);
-        } catch (error) {
-          console.error("Error setting localStorage:", error);
-          setError("Failed to log in. Please try again.");
+      const scrollToCarouselItem = (index) => {
+        setActiveCarouselItem(index);
+        if (carouselRef.current) {
+          carouselRef.current.scrollTo({
+            left: carouselRef.current.clientWidth * index,
+            behavior: 'smooth'
+          });
         }
       };
-
-      const handleLogout = () => {
-        try {
-          localStorage.removeItem("user");
-          setUser(null);
-        } catch (error) {
-          console.error("Error removing from localStorage:", error);
-          setError("Failed to log out. Please try again.");
-        }
-      };
-
-      if (error) {
-        return <div className="error-message">{error}</div>;
-      }
 
       return (
-        <div className={`min-h-screen ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}>
-          {/* Header */}
-          <header className={`shadow-md p-4 flex items-center justify-between ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
-            <div className="flex items-center space-x-4">
-              <button onClick={toggleSidebar} className="text-2xl md:hidden">☰</button>
-              <img src="images/logo.png" alt="Bareeq Logo" className="h-12" onError={() => console.error("Failed to load logo")} />
-              <div className="flex-grow mx-4">
-                <input
-                  type="text"
-                  placeholder="Search Bareeq Store..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className={`w-full p-2 rounded-full border focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-600 bg-gray-700 text-white" : "border-gray-300 bg-white text-black"}`}
-                />
+        <div className="min-h-screen bg-gray-100">
+          <header className="bg-gray-900 text-white">
+            <div className="flex items-center p-2 mobile-p-2">
+              <div className="flex items-center flex-shrink-0 mr-4">
+                <button onClick={toggleSidebar} className="mr-2">
+                  <div className={`hamburger-menu ${isSidebarOpen ? 'open' : ''}`}>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </button>
+                <a href="#" className="flex items-center">
+                  <span className="text-2xl md:text-3xl font-bold text-white">Bareeq Store</span>
+                </a>
+              </div>
+              <div className="hidden md:flex items-center mx-2 px-2 border border-transparent hover:border-white cursor-pointer">
+                <div className="text-xs text-gray-300">Deliver to</div>
+                <div className="text-sm font-bold">Egypt</div>
+              </div>
+              <div className="flex flex-1 mx-2">
+                <div className="flex w-full">
+                  <select className="hidden md:block bg-gray-100 text-black text-sm p-2 rounded-l-md border-r border-gray-300">
+                    <option>All</option>
+                    {categories.map(cat => <option key={cat}>{cat}</option>)}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search Bareeq Store..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    className="flex-grow p-2 text-black focus:outline-none"
+                  />
+                  <button className="bg-yellow-400 hover:bg-yellow-500 text-black p-2 rounded-r-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:flex flex-col mx-2 p-2 border border-transparent hover:border-white cursor-pointer">
+                <div className="text-xs">Returns</div>
+                <div className="text-sm font-bold">& Orders</div>
+              </div>
+              <div className="flex items-center mx-2 p-2 border border-transparent hover:border-white cursor-pointer relative">
+                <div 
+                  className="flex items-center" 
+                  onClick={() => setIsCartMenuOpen(!isCartMenuOpen)}
+                >
+                  <div className="relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItems}
+                    </span>
+                  </div>
+                  <span className="hidden md:inline ml-1 text-sm font-bold">Cart</span>
+                </div>
+                {isCartMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 bg-white text-black p-4 rounded shadow-lg dropdown-menu z-50 w-64">
+                    {cartItems > 0 ? (
+                      <>
+                        <div className="font-bold mb-2">Your Cart</div>
+                        <div className="text-sm">
+                          {cartItems} {cartItems === 1 ? 'item' : 'items'} in your cart
+                        </div>
+                        <button className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-1 px-4 rounded-md text-sm font-medium mt-2">
+                          Proceed to checkout
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-sm">Your Bareeq Cart is empty</div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <span>Hello, {user.name}</span>
-                  <button onClick={handleLogout} className="text-sm bg-red-500 text-white px-2 py-1 rounded">Logout</button>
-                </div>
-              ) : (
-                <button onClick={handleLogin} className="text-sm bg-yellow-500 text-black px-3 py-1 rounded">Sign In</button>
-              )}
-              <button onClick={toggleDarkMode} className="text-xl">
-                {isDarkMode ? "☀️" : "🌙"}
-              </button>
-              <span className="text-2xl cursor-pointer">🛒</span>
+            <div className="flex items-center bg-gray-800 text-white text-sm p-2 overflow-x-auto whitespace-nowrap">
+              <div className="flex space-x-4">
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Today's Deals</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Customer Service</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Registry</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Gift Cards</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Sell</a>
+              </div>
             </div>
           </header>
 
-          {/* Main Content */}
           <div className="flex">
-            {/* Sidebar */}
-            <aside className={`w-64 p-4 h-screen overflow-y-auto sidebar shadow-md ${isDarkMode ? "bg-gray-800" : "bg-white"} ${isSidebarOpen ? "block" : "hidden"} md:block`}>
-              <h2 className="text-lg font-bold mb-4">Departments</h2>
-              <button
-                onClick={() => handleCategorySelect("All")}
-                className={`block w-full text-left py-1 px-2 hover:bg-gray-100 ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-              >
-                All Departments
-              </button>
-              {categories.map(category => (
+            <aside className={`fixed md:static inset-y-0 left-0 w-64 bg-white shadow-md transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out z-40 overflow-y-auto`}>
+              <div className="p-4">
+                <h2 className="text-lg font-bold mb-4">Shop By Department</h2>
                 <button
-                  key={category}
-                  onClick={() => handleCategorySelect(category)}
-                  className={`block w-full text-left py-1 px-2 hover:bg-gray-100 ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                  onClick={() => handleCategorySelect("All")}
+                  className={`block w-full text-left py-2 px-2 hover:bg-gray-100 rounded ${selectedCategory === "All" ? 'bg-gray-200 font-medium' : ''}`}
                 >
-                  {category}
+                  All Departments
                 </button>
-              ))}
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategorySelect(category)}
+                    className={`block w-full text-left py-2 px-2 hover:bg-gray-100 rounded ${selectedCategory === category ? 'bg-gray-200 font-medium' : ''}`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
             </aside>
 
-            {/* Main Section */}
-            <main className="flex-1 p-4">
-              {/* Products */}
-              <section className="mb-8">
-                <h2 className="text-xl font-bold mb-4">Results</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <main className="flex-1">
+              <div className="relative">
+                <div 
+                  ref={carouselRef}
+                  className="carousel flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                  style={{ scrollSnapType: 'x mandatory' }}
+                >
+                  {carouselItems.map((item, index) => (
+                    <div key={item.id} className="carousel-item w-full flex-shrink-0">
+                      <div className="relative h-64 md:h-96 w-full">
+                        <img 
+                          src={item.image} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6">
+                          <h2 className="text-2xl md:text-3xl font-bold text-white">{item.title}</h2>
+                          <p className="text-white">{item.subtitle}</p>
+                          <button className="mt-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-md text-sm font-medium">
+                            Shop Now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+                  {carouselItems.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollToCarouselItem(index)}
+                      className={`w-3 h-3 rounded-full ${activeCarouselItem === index ? 'bg-yellow-400' : 'bg-white bg-opacity-50'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">Today's Deals</h2>
+                  <a href="#" className="text-blue-600 hover:underline text-sm">See all deals</a>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {products.slice(0, 6).map(product => (
+                    <div key={product.id} className="product-card bg-white p-3 rounded border border-gray-200">
+                      <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        className="w-full h-32 object-contain mb-2" 
+                      />
+                      <div className="text-xs text-gray-500 mt-1">{product.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 mt-4">
+                <h2 className="text-xl font-bold mb-4">
+                  {selectedCategory === "All" ? "Featured Products" : selectedCategory}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredProducts.map(product => (
-                    <div key={product.id} className={`p-4 rounded shadow product-card ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                    <div key={product.id} className="product-card bg-white p-3 rounded border border-gray-200">
                       <img 
                         src={product.image} 
                         alt={product.name} 
                         className="w-full h-40 object-contain mb-2" 
-                        onError={() => console.error(`Failed to load image: ${product.image}`)} 
                       />
-                      <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"} mb-1`}>{product.category}</p>
-                      <h3 className="font-semibold text-sm">{product.name}</h3>
-                      <p className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>{product.description}</p>
-                      {editingPrice === product.id ? (
-                        <div className="flex items-center space-x-2 mt-2">
-                          <input
-                            type="number"
-                            value={newPrice}
-                            onChange={(e) => setNewPrice(e.target.value)}
-                            className={`w-20 p-1 border rounded ${isDarkMode ? "bg-gray-600 text-white border-gray-500" : "bg-white text-black border-gray-300"}`}
-                            placeholder="New Price"
-                          />
-                          <button
-                            onClick={() => handleSavePrice(product.id)}
-                            className="bg-green-500 text-white px-2 py-1 rounded"
-                          >
-                            Save
-                          </button>
+                      <div className="text-sm font-medium text-gray-800 mb-1">{product.name}</div>
+                      <div className="flex items-center mb-1">
+                        <div className="rating-stars">
+                          {'★'.repeat(Math.floor(product.rating)) + '☆'.repeat(5 - Math.floor(product.rating))}
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => handleEditPrice(product.id, product.price)}
-                          className="text-sm text-blue-500 hover:underline mt-2"
-                        >
-                          Edit Price
-                        </button>
+                        <span className="text-xs text-blue-600 ml-1">{product.reviews}</span>
+                      </div>
+                      {product.isPrime && (
+                        <div className="prime-badge inline-block mt-1">Prime</div>
                       )}
+                      <button 
+                        onClick={() => addToCart(product.id)}
+                        className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-black py-1 px-2 rounded-md text-sm font-medium"
+                      >
+                        Add to Cart
+                      </button>
                     </div>
                   ))}
                 </div>
-              </section>
+              </div>
 
-              {/* Shipping & Payment */}
-              <section className="mb-8">
-                <h2 className="text-xl font-bold mb-4">Shipping & Payment</h2>
-                <p>Shipped to all governorates in 2-3 days.</p>
-                <p>Shipping Cost: $5.00 (Flat rate for all orders)</p>
-                <p>Order via WhatsApp: <a href="https://wa.me/201010945324" className="text-blue-500">01010945324</a></p>
-              </section>
-
-              {/* About */}
-              <section className="mb-8">
-                <h2 className="text-xl font-bold mb-4">About Bareeq</h2>
-                <p>Bareeq is all about elegance and simplicity. We bring high-quality products with style that fits your life.</p>
-              </section>
-
-              {/* Contact */}
-              <section className="mb-8">
-                <h2 className="text-xl font-bold mb-4">Contact Us</h2>
-                <div className={`p-6 rounded-lg shadow ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}>
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    required
-                    className={`w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-500 bg-gray-600 text-white placeholder-gray-300" : "border-gray-400 bg-white text-black placeholder-gray-400"}`}
-                  />
-                  <input
-                    type="email"
-                    placeholder="Your Email"
-                    required
-                    className={`w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-500 bg-gray-600 text-white placeholder-gray-300" : "border-gray-400 bg-white text-black placeholder-gray-400"}`}
-                  />
-                  <textarea
-                    placeholder="Your Message"
-                    className={`w-full p-3 mb-3 border rounded focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isDarkMode ? "border-gray-500 bg-gray-600 text-white placeholder-gray-300" : "border-gray-400 bg-white text-black placeholder-gray-400"}`}
-                    rows="4"
-                  ></textarea>
-                  <button
-                    onClick={() => alert("Message sent!")}
-                    className="bg-yellow-500 text-black px-6 py-2 rounded hover:bg-yellow-600 transition"
-                  >
-                    Send
-                  </button>
+              <div className="bg-white p-4 mt-4">
+                <h2 className="text-xl font-bold mb-4">Shop by Category</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {categories.map(category => (
+                    <div 
+                      key={category} 
+                      className="product-card bg-white p-3 rounded border border-gray-200 text-center cursor-pointer hover:shadow-md"
+                      onClick={() => handleCategorySelect(category)}
+                    >
+                      <div className="h-24 w-full bg-gray-100 mb-2 flex items-center justify-center">
+                        <img 
+                          src={categoryImages[category]} 
+                          alt={category} 
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                      <div className="text-sm font-medium">{category}</div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex space-x-4 mt-4">
-                  <a href="https://www.facebook.com/share/18MS1CwxtP/" className="text-blue-500 hover:underline">Facebook</a>
-                  <a href="https://www.instagram.com/_bareeq_store_?igsh=ZHQzeHJpbm96aThj" className="text-blue-500 hover:underline">Instagram</a>
-                  <a href="https://tiktok.com/@bareeq_st0re" className="text-blue-500 hover:underline">TikTok</a>
-                  <a href="https://wa.me/201010945324" className="text-blue-500 hover:underline">WhatsApp</a>
+              </div>
+
+              <div className="bg-gray-100 p-6 mt-8">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Get to Know Us</h3>
+                    <ul className="space-y-2">
+                      <li><a href="#" className="text-sm hover:underline">About Us</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Careers</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Press Releases</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Make Money with Us</h3>
+                    <ul className="space-y-2">
+                      <li><a href="#" className="text-sm hover:underline">Sell products</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Become an Affiliate</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Advertise Your Products</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Payment Products</h3>
+                    <ul className="space-y-2">
+                      <li><a href="#" className="text-sm hover:underline">Business Card</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Shop with Points</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Reload Your Balance</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Connect with Us</h3>
+                    <div className="bg-white p-4 rounded-md shadow-sm">
+                      <ul className="flex flex-col space-y-2">
+                        <li>
+                          <a href="https://www.facebook.com/share/18MS1CwxtP/" target="_blank" className="flex items-center text-sm hover:text-yellow-600 social-link">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                            </svg>
+                            Facebook
+                          </a>
+                        </li>
+                        <li>
+                          <a href="https://www.instagram.com/bareeq_store?igsh=ZHQzeHJpbm96aThj" target="_blank" className="flex items-center text-sm hover:text-yellow-600 social-link">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.919-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.332.014 7.052.072 3.668.227 1.981 1.97 1.826 5.354c-.058 1.281-.072 1.689-.072 4.948 0 3.259.014 3.668.072 4.948.155 3.384 1.897 5.071 5.281 5.226 1.28.058 1.689.072 4.948.072s3.668-.014 4.948-.072c3.384-.155 5.071-1.842 5.226-5.226.058-1.28.072-1.689.072-4.948s-.014-3.668-.072-4.948c-.155-3.384-1.842-5.071-5.226-5.226C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 11.324 6.162 6.162 0 000-11.324zm0 10.162a3.999 3.999 0 110-7.998 3.999 3.999 0 010 7.998zm6.406-11.845a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z"/>
+                            </svg>
+                            Instagram
+                          </a>
+                        </li>
+                        <li>
+                          <a href="https://tiktok.com/@bareeq_st0re" target="_blank" className="flex items-center text-sm hover:text-yellow-600 social-link">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.39z"/>
+                            </svg>
+                            TikTok
+                          </a>
+                        </li>
+                        <li>
+                          <a href="mailto:zozze1735@gmail.com" className="flex items-center text-sm hover:text-yellow-600 social-link">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                            Email
+                          </a>
+                        </li>
+                        <li>
+                          <a href="https://wa.me/+201010945324" target="_blank" className="flex items-center text-sm hover:text-yellow-600 social-link">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.134.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.571-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.462-4.449 9.881-9.887 9.881m6.932-2.541c-.401.201-2.363 1.162-2.735 1.297-.371.134-.632.199-.902-.201-.266-.398-1.031-1.297-1.265-1.562-.234-.266-.466-.297-.866.099-.398.201-1.686.622-3.218 1.981-1.188 1.058-1.986 2.363-2.22 2.762-.234.398-.024.616.174.816.181.181.399.466.599.699.199.234.266.398.399.666.134.266.067.499-.033.698-.099.199-.899 2.163-1.232 2.961-.326.779-.654.671-.899.686-.234.011-.499.013-.769.013-.266 0-.698-.099-1.064-.498-.365-.398-1.398 1.362-1.398 3.326 0 1.962 1.431 3.862 1.631 4.126.199.266 2.816 4.297 6.831 6.022.952.411 1.698.657 2.278.838.956.305 1.828.262 2.513.159.769-.114 2.363-.965 2.698-1.897.334-.932.334-1.729.232-1.897-.099-.166-.365-.266-.769-.466"/>
+                            </svg>
+                            WhatsApp
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              </section>
+              </div>
             </main>
           </div>
 
-          {/* Footer */}
-          <footer className={`p-4 text-center ${isDarkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-black"}`}>
-            <div className="flex justify-center space-x-4">
-              <span className="cursor-pointer">🏠 Home</span>
-              <span className="cursor-pointer">🔍 Search</span>
-              <span className="cursor-pointer">📁 Collection</span>
-              <span className="cursor-pointer">🛒 Cart</span>
+          <footer className="bg-gray-800 text-white p-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-4">
+                <a href="#" className="text-sm hover:underline">Conditions of Use</a>
+                <span className="mx-2">|</span>
+                <a href="#" className="text-sm hover:underline">Privacy Notice</a>
+                <span className="mx-2">|</span>
+                <a href="#" className="text-sm hover:underline">Interest-Based Ads</a>
+              </div>
+              <div className="text-center text-sm">
+                © 2023, Bareeq Store, Inc. or its affiliates
+              </div>
             </div>
           </footer>
         </div>
       );
     }
 
-    try {
-      const root = ReactDOM.createRoot(document.getElementById("root"));
-      root.render(<App />);
-    } catch (error) {
-      console.error("Error rendering the app:", error);
-      document.getElementById("root").innerHTML = `<div class="error-message">Failed to load the application: ${error.message}</div>`;
-    }
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
   </script>
 </body>
 </html>

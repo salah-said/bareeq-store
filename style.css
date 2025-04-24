@@ -1,47 +1,552 @@
-body {
-  font-family: Arial, sans-serif;
-  color: black; /* الوضع الافتراضي: اللون الأسود */
-  background-color: white; /* الوضع الافتراضي: الخلفية بيضاء */
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Bareeq Store</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Amazon Ember', Arial, sans-serif;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .product-card {
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .amazon-navbar {
+      background: linear-gradient(to bottom, #1E3A8A, #3B82F6);
+    }
+    .amazon-search {
+      background: linear-gradient(to bottom, #FBBF24, #F59E0B);
+    }
+    .amazon-search:focus {
+      box-shadow: 0 0 0 3px #F59E0B, 0 0 0 2px #F59E0B inset;
+    }
+    .amazon-orange-btn {
+      background: linear-gradient(to bottom, #FBBF24, #F59E0B);
+      border-color: #D97706 #B4530B #92400E;
+    }
+    .amazon-orange-btn:hover {
+      background: linear-gradient(to bottom, #FCD34D, #FBBF24);
+    }
+    .amazon-dark-btn {
+      background: linear-gradient(to bottom, #F3F4F6, #E5E7EB);
+      border-color: #9CA3AF #6B7280 #4B5563;
+    }
+    .amazon-dark-btn:hover {
+      background: linear-gradient(to bottom, #E5E7EB, #D1D5DB);
+    }
+    .amazon-footer {
+      background: linear-gradient(to bottom, #1E3A8A, #3B82F6);
+    }
+    .hamburger-menu {
+      width: 25px;
+      height: 20px;
+      position: relative;
+      transform: rotate(0deg);
+      transition: .5s ease-in-out;
+      cursor: pointer;
+    }
+    .hamburger-menu span {
+      display: block;
+      position: absolute;
+      height: 3px;
+      width: 100%;
+      background: white;
+      border-radius: 3px;
+      opacity: 1;
+      left: 0;
+      transform: rotate(0deg);
+      transition: .25s ease-in-out;
+    }
+    .hamburger-menu span:nth-child(1) { top: 0px; }
+    .hamburger-menu span:nth-child(2), .hamburger-menu span:nth-child(3) { top: 8px; }
+    .hamburger-menu span:nth-child(4) { top: 16px; }
+    .hamburger-menu.open span:nth-child(1) {
+      top: 8px;
+      width: 0%;
+      left: 50%;
+    }
+    .hamburger-menu.open span:nth-child(2) { transform: rotate(45deg); }
+    .hamburger-menu.open span:nth-child(3) { transform: rotate(-45deg); }
+    .hamburger-menu.open span:nth-child(4) {
+      top: 8px;
+      width: 0%;
+      left: 50%;
+    }
+    .carousel {
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+    .carousel-item {
+      scroll-snap-align: start;
+      flex: 0 0 auto;
+    }
+    .deal-badge {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #CC0C39;
+      color: white;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 0 0 4px 0;
+    }
+    .rating-stars {
+      color: #F59E0B;
+      font-size: 18px;
+    }
+    .prime-badge {
+      background: #3B82F6;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .dropdown-menu {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      min-width: 200px;
+    }
+    @media (max-width: 640px) {
+      .mobile-hidden { display: none; }
+      .mobile-flex-col { flex-direction: column; }
+      .mobile-text-sm { font-size: 14px; }
+      .mobile-p-2 { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-/* عند التبديل إلى الوضع الليلي */
-body.dark {
-  color: white; /* تغيير اللون إلى أبيض في الوضع الليلي */
-  background-color: #2d2d2d; /* تغيير الخلفية إلى سوداء في الوضع الليلي */
-}
+    const categories = [
+      "Men Watches", "Perfumes", "Sunglasses", "Women Watches",
+      "Women Bags", "Men Wallets", "Women Wallets", "Women Accessories"
+    ];
 
-.product-card {
-  transition: transform 0.2s;
-}
+    const imagePool = Array.from({ length: 30 }, (_, i) => `https://via.placeholder.com/150?text=Product${i+1}`);
 
-.product-card:hover {
-  transform: scale(1.05);
-}
+    const initialProducts = Array.from({ length: 30 }, (_, index) => ({
+      id: index + 1,
+      name: `Premium ${["Watch", "Perfume", "Bag", "Sunglasses", "Wallet"][index % 5]} ${index + 1}`,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      price: (Math.floor(Math.random() * 50) + 10).toFixed(2),
+      originalPrice: (Math.floor(Math.random() * 100) + 50).toFixed(2),
+      description: `High-quality ${categories[Math.floor(Math.random() * categories.length)].toLowerCase()} with premium features.`,
+      image: imagePool[index],
+      rating: (Math.random() * 2 + 3).toFixed(1),
+      reviews: Math.floor(Math.random() * 100),
+      isPrime: Math.random() > 0.3
+    }));
 
-.sidebar {
-  scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
-}
+    const carouselItems = [
+      { id: 1, title: "Summer Sale", subtitle: "Up to 50% off", image: "https://via.placeholder.com/1200x400?text=Banner1" },
+      { id: 2, title: "New Arrivals", subtitle: "Discover latest trends", image: "https://via.placeholder.com/1200x400?text=Banner2" },
+      { id: 3, title: "Prime Members", subtitle: "Exclusive deals", image: "https://via.placeholder.com/1200x400?text=Banner3" }
+    ];
 
-.sidebar::-webkit-scrollbar {
-  width: 8px;
-}
+    function App() {
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+      const [selectedCategory, setSelectedCategory] = useState("All");
+      const [products, setProducts] = useState(initialProducts);
+      const [user, setUser] = useState(null);
+      const [searchQuery, setSearchQuery] = useState("");
+      const [cartItems, setCartItems] = useState(0);
+      const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+      const [isCartMenuOpen, setIsCartMenuOpen] = useState(false);
+      const [activeCarouselItem, setActiveCarouselItem] = useState(0);
+      const carouselRef = useRef(null);
 
-.sidebar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
+      useEffect(() => {
+        const loggedInUser = localStorage.getItem("user");
+        if (loggedInUser) {
+          setUser(JSON.parse(loggedInUser));
+          setCartItems(Math.floor(Math.random() * 5) + 1);
+        }
+      }, []);
 
-.sidebar::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setActiveCarouselItem((prev) => (prev + 1) % carouselItems.length);
+          if (carouselRef.current) {
+            carouselRef.current.scrollTo({
+              left: carouselRef.current.clientWidth * ((activeCarouselItem + 1) % carouselItems.length),
+              behavior: 'smooth'
+            });
+          }
+        }, 5000);
+        return () => clearInterval(interval);
+      }, [activeCarouselItem]);
 
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+      const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+      const handleCategorySelect = (category) => {
+        setSelectedCategory(category);
+        setIsSidebarOpen(false);
+      };
+      const handleSearch = (e) => setSearchQuery(e.target.value);
+      const handleLogin = () => {
+        const userData = { name: "John Doe", email: "john@example.com" };
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+        setCartItems(Math.floor(Math.random() * 5) + 1);
+      };
+      const handleLogout = () => {
+        localStorage.removeItem("user");
+        setUser(null);
+        setCartItems(0);
+      };
+      const addToCart = (productId) => {
+        setCartItems(cartItems + 1);
+        setIsCartMenuOpen(true);
+        setTimeout(() => setIsCartMenuOpen(false), 3000);
+      };
 
-/* تغير الألوان في الوضع الليلي */
-body.dark .sidebar {
-  scrollbar-color: #555 #333; /* ألوان الشريط الجانبي في الوضع الليلي */
-}
+      const filteredProducts = products.filter(product => {
+        const inCategory = selectedCategory === "All" || product.category === selectedCategory;
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           product.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return inCategory && matchesSearch;
+      });
 
+      const scrollToCarouselItem = (index) => {
+        setActiveCarouselItem(index);
+        if (carouselRef.current) {
+          carouselRef.current.scrollTo({
+            left: carouselRef.current.clientWidth * index,
+            behavior: 'smooth'
+          });
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-100">
+          <header className="bg-gray-900 text-white">
+            <div className="flex items-center p-2 mobile-p-2">
+              <div className="flex items-center flex-shrink-0 mr-4">
+                <button onClick={toggleSidebar} className="mr-2">
+                  <div className={`hamburger-menu ${isSidebarOpen ? 'open' : ''}`}>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </button>
+                <a href="#" className="flex items-center">
+                  <img src="images/logo.png" alt="Bareeq Logo" className="h-8" />
+                </a>
+              </div>
+              <div className="hidden md:flex items-center mx-2 px-2 border border-transparent hover:border-white cursor-pointer">
+                <div className="text-xs text-gray-300">Deliver to</div>
+                <div className="text-sm font-bold">Egypt</div>
+              </div>
+              <div className="flex flex-1 mx-2">
+                <div className="flex w-full">
+                  <select className="hidden md:block bg-gray-100 text-black text-sm p-2 rounded-l-md border-r border-gray-300">
+                    <option>All</option>
+                    {categories.map(cat => <option key={cat}>{cat}</option>)}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search Bareeq Store..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    className="flex-grow p-2 text-black focus:outline-none"
+                  />
+                  <button className="bg-yellow-400 hover:bg-yellow-500 text-black p-2 rounded-r-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:flex items-center mx-2 p-2 border border-transparent hover:border-white cursor-pointer relative">
+                <div onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}>
+                  <div className="text-xs">Hello, {user ? user.name : 'Sign in'}</div>
+                  <div className="text-sm font-bold">Account & Lists</div>
+                </div>
+                {isAccountMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 bg-white text-black p-4 rounded shadow-lg dropdown-menu z-50">
+                    {user ? (
+                      <>
+                        <div className="font-bold mb-2">Your Account</div>
+                        <ul className="text-sm">
+                          <li className="py-1 hover:text-yellow-600 cursor-pointer">Account</li>
+                          <li className="py-1 hover:text-yellow-600 cursor-pointer">Orders</li>
+                          <li className="py-1 hover:text-yellow-600 cursor-pointer">Wish List</li>
+                          <li className="py-1 hover:text-yellow-600 cursor-pointer">
+                            <button onClick={handleLogout} className="w-full text-left">Sign Out</button>
+                          </li>
+                        </ul>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={handleLogin} 
+                          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-1 px-4 rounded-md text-sm font-medium"
+                        >
+                          Sign in
+                        </button>
+                        <div className="text-xs mt-2">
+                          New customer? <a href="#" className="text-blue-600 hover:underline">Start here.</a>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="hidden md:flex flex-col mx-2 p-2 border border-transparent hover:border-white cursor-pointer">
+                <div className="text-xs">Returns</div>
+                <div className="text-sm font-bold">& Orders</div>
+              </div>
+              <div className="flex items-center mx-2 p-2 border border-transparent hover:border-white cursor-pointer relative">
+                <div 
+                  className="flex items-center" 
+                  onClick={() => setIsCartMenuOpen(!isCartMenuOpen)}
+                >
+                  <div className="relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItems}
+                    </span>
+                  </div>
+                  <span className="hidden md:inline ml-1 text-sm font-bold">Cart</span>
+                </div>
+                {isCartMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 bg-white text-black p-4 rounded shadow-lg dropdown-menu z-50 w-64">
+                    {cartItems > 0 ? (
+                      <>
+                        <div className="font-bold mb-2">Your Cart</div>
+                        <div className="text-sm">
+                          {cartItems} {cartItems === 1 ? 'item' : 'items'} in your cart
+                        </div>
+                        <button className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-1 px-4 rounded-md text-sm font-medium mt-2">
+                          Proceed to checkout
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-sm">Your Bareeq Cart is empty</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center bg-gray-800 text-white text-sm p-2 overflow-x-auto whitespace-nowrap">
+              <div className="flex space-x-4">
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Today's Deals</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Customer Service</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Registry</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Gift Cards</a>
+                <a href="#" className="px-2 hover:border border-transparent hover:border-white">Sell</a>
+              </div>
+            </div>
+          </header>
+
+          <div className="flex">
+            <aside className={`fixed md:static inset-y-0 left-0 w-64 bg-white shadow-md transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out z-40 overflow-y-auto`}>
+              <div className="p-4">
+                <h2 className="text-lg font-bold mb-4">Shop By Department</h2>
+                <button
+                  onClick={() => handleCategorySelect("All")}
+                  className={`block w-full text-left py-2 px-2 hover:bg-gray-100 rounded ${selectedCategory === "All" ? 'bg-gray-200 font-medium' : ''}`}
+                >
+                  All Departments
+                </button>
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategorySelect(category)}
+                    className={`block w-full text-left py-2 px-2 hover:bg-gray-100 rounded ${selectedCategory === category ? 'bg-gray-200 font-medium' : ''}`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <main className="flex-1">
+              <div className="relative">
+                <div 
+                  ref={carouselRef}
+                  className="carousel flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                  style={{ scrollSnapType: 'x mandatory' }}
+                >
+                  {carouselItems.map((item, index) => (
+                    <div key={item.id} className="carousel-item w-full flex-shrink-0">
+                      <div className="relative h-64 md:h-96 w-full">
+                        <img 
+                          src={item.image} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6">
+                          <h2 className="text-2xl md:text-3xl font-bold text-white">{item.title}</h2>
+                          <p className="text-white">{item.subtitle}</p>
+                          <button className="mt-2 bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded-md text-sm font-medium">
+                            Shop Now
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+                  {carouselItems.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollToCarouselItem(index)}
+                      className={`w-3 h-3 rounded-full ${activeCarouselItem === index ? 'bg-yellow-400' : 'bg-white bg-opacity-50'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold">Today's Deals</h2>
+                  <a href="#" className="text-blue-600 hover:underline text-sm">See all deals</a>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {products.slice(0, 6).map(product => (
+                    <div key={product.id} className="product-card bg-white p-3 rounded border border-gray-200 relative">
+                      <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        className="w-full h-32 object-contain mb-2" 
+                      />
+                      <div className="text-xs text-gray-500 mt-1">{product.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 mt-4">
+                <h2 className="text-xl font-bold mb-4">
+                  {selectedCategory === "All" ? "Featured Products" : selectedCategory}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filteredProducts.map(product => (
+                    <div key={product.id} className="product-card bg-white p-3 rounded border border-gray-200">
+                      <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        className="w-full h-40 object-contain mb-2" 
+                      />
+                      <div className="text-sm font-medium text-gray-800 mb-1">{product.name}</div>
+                      <div className="flex items-center mb-1">
+                        <div className="rating-stars">
+                          {'★'.repeat(Math.floor(product.rating)) + '☆'.repeat(5 - Math.floor(product.rating))}
+                        </div>
+                        <span className="text-xs text-blue-600 ml-1">{product.reviews}</span>
+                      </div>
+                      {product.isPrime && (
+                        <div className="prime-badge inline-block mt-1">Prime</div>
+                      )}
+                      <button 
+                        onClick={() => addToCart(product.id)}
+                        className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-black py-1 px-2 rounded-md text-sm font-medium"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 mt-4">
+                <h2 className="text-xl font-bold mb-4">Shop by Category</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {categories.map(category => (
+                    <div 
+                      key={category} 
+                      className="product-card bg-white p-3 rounded border border-gray-200 text-center cursor-pointer hover:shadow-md"
+                      onClick={() => handleCategorySelect(category)}
+                    >
+                      <div className="h-24 w-full bg-gray-100 mb-2 flex items-center justify-center">
+                        <span className="text-gray-500">Icon</span>
+                      </div>
+                      <div className="text-sm font-medium">{category}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-100 p-6 mt-8">
+                <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Get to Know Us</h3>
+                    <ul className="space-y-2">
+                      <li><a href="#" className="text-sm hover:underline">About Us</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Careers</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Press Releases</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Make Money with Us</h3>
+                    <ul className="space-y-2">
+                      <li><a href="#" className="text-sm hover:underline">Sell products</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Become an Affiliate</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Advertise Your Products</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Payment Products</h3>
+                    <ul className="space-y-2">
+                      <li><a href="#" className="text-sm hover:underline">Business Card</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Shop with Points</a></li>
+                      <li><a href="#" className="text-sm hover:underline">Reload Your Balance</a></li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Connect with Us</h3>
+                    <ul className="space-y-2">
+                      <li><a href="https://www.facebook.com/share/18MS1CwxtP/" target="_blank" className="text-sm hover:underline">Facebook</a></li>
+                      <li><a href="https://www.instagram.com/bareeq_store?igsh=ZHQzeHJpbm96aThj" target="_blank" className="text-sm hover:underline">Instagram</a></li>
+                      <li><a href="https://tiktok.com/@bareeq_st0re" target="_blank" className="text-sm hover:underline">TikTok</a></li>
+                      <li><a href="mailto:zozze1735@gmail.com" className="text-sm hover:underline">Email: zozze1735@gmail.com</a></li>
+                      <li><a href="https://wa.me/+201010945324" target="_blank" className="text-sm hover:underline">WhatsApp: +201010945324</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+
+          <footer className="bg-gray-800 text-white p-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-4">
+                <a href="#" className="text-sm hover:underline">Conditions of Use</a>
+                <span className="mx-2">|</span>
+                <a href="#" className="text-sm hover:underline">Privacy Notice</a>
+                <span className="mx-2">|</span>
+                <a href="#" className="text-sm hover:underline">Interest-Based Ads</a>
+              </div>
+              <div className="text-center text-sm">
+                © 2023, Bareeq Store, Inc. or its affiliates
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
